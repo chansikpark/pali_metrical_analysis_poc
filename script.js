@@ -9,18 +9,18 @@ const util = require('util')
 
 const CONSONANTS = `(?:
 	k,	c,	ṭ,	t,	p,
-	kh,	ch,	ṭh,	th,	ph, 
+	kh,	ch,	ṭh,	th,	ph,
 	g,	j,	ḍ,	d,	b,
-	gh,	jh,	ḍh,	dh,	bh, 
+	gh,	jh,	ḍh,	dh,	bh,
 	ṅ,	ñ,	ṇ,	n,	m,
 	h,	y,	r,	l,	v,
 	ḷh,	ḷ,	s,
-	dr, by,	br,	vy)` // S1.5 Soft Conjunts (by,br,vy; but not always...TODO), p17 
+	dr, by,	br,	vy)` // S1.5 Soft Conjunts (by,br,vy; but not always...TODO), p17
 .replace(/\s/g,"").replace(/,/g,"|")
 const VOWELS = `(?:[
 	a,	i,	u,
 	ā,	ī,	ū,
-	e,	o])`	// 
+	e,	o])`	//
 .replace(/\s|,/g,"")
 const SYLLABOUS_REX = new RegExp("^"+[		//TODO: there may or may not be something wrong here
 	"(v(?=cv),?|cv,?(?=cv)|cv,?(?=v))",	// open syllables
@@ -44,8 +44,8 @@ class Scanner {
 		if (!match || match.index > 0) throw this.line
 		this.line = this.line.substring(match[0].length)
 
-		let scansion = match[3] ? "X" : 
-			(match[1] && /[aiu]$/.test(match[0]) ? "1" : "2")
+		let scansion = match[3] ? "X" :
+			(match[1] && /[aiu],?$/.test(match[0]) ? "1" : "2")
 			+ (match[0].endsWith(",") ? "," : "")
 		return scansion + ("     ".substr(0, match[0].length - scansion.length))
 	}
@@ -106,8 +106,8 @@ class Fitter {
 //TODO measure count validation
 //TODO multiline validation
 class MetreTemplate {
-	constructor(measureStructures, 
-		lineIndexToStructureVariationsFunction = lineIndex => Object.keys(this.structs), 
+	constructor(measureStructures,
+		lineIndexToStructureVariationsFunction = lineIndex => Object.keys(this.structs),
 		scansionAdjustmentFunction = (scansion,variation,match) => match ? scansion : null) {
 		this.structs = measureStructures
 		this.regexes = {}
@@ -124,8 +124,8 @@ class MetreTemplate {
 	getFitting(line, index) {
 		//Scansion
 		let scansion = ""
-		for (let scanner = new Scanner(line); 
-			scanner.line; 
+		for (let scanner = new Scanner(line);
+			scanner.line;
 			scansion+=scanner.next());
 
 		//Fitness
@@ -135,8 +135,8 @@ class MetreTemplate {
 
 				let fitting = ""
 				let a = ""
-				for (let fitter = new Fitter(scansion, this.structs[variation]); 
-					fitter.scansion && (a = fitter.next()); 
+				for (let fitter = new Fitter(scansion, this.structs[variation]);
+					fitter.scansion && (a = fitter.next());
 					fitting+=a);
 				return {
 					name:variation,
@@ -243,28 +243,26 @@ const poem2 = `
 	Kāmesu vinaya gedhaṃ, Na hi jātuggabbhaseyya punareti`
 .toLowerCase().trim().replace(/[ ]|\t/g,"").split("\n")
 
+console.log(Object.keys(MetreTemplate.Templates)[0])
 console.log(util.inspect(
 	poem.map(
 		(line, index) => ({
 			line:line,
 			fit:Object.keys(MetreTemplate.Templates).map(
-				(metre) => MetreTemplate.Templates[metre].getFitting(line, index) 
+				(metre) => MetreTemplate.Templates[metre].getFitting(line, index)
 			)
 		})
 	).map((obj)=>(
 		{
 			line:obj.line,
-			scan:obj.fit[1].scansion, 
-			fitt: obj.fit[1].fitness.map(
-				(fit)=>"   "+fit.fitting
+			scan:obj.fit[0].scansion,
+			fitt: obj.fit[0].fitness.map(
+				(fit)=>"    "+fit.fitting
 			),
-			matches:obj.fit[1].fitness.reduce(
-				(res,fit)=>fit.matches ? (res?res:"")+"|"+fit.name : res,
+			matches:obj.fit[0].fitness.reduce(
+				(res,fit)=>fit.matches ? (res?res+"|":"")+fit.name : res,
 				null
 			)
 		}
 	))
 , {showHidden:false, depth:null, colors:true}))
-
-
-
